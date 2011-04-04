@@ -1,0 +1,103 @@
+body {
+	background-color: black;
+}
+
+header {
+	font-size: 2em;
+	color: white;
+	font-family: Helvetica, Arial, sans-serif;
+	margin: 0;
+	position: fixed;
+	width: 100%;
+	background-color: black;
+	z-index: 1;
+	top: 0;
+	padding-bottom: 6px;
+}
+
+header h1 {
+	margin: 0;
+}
+
+#workingArea {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	margin: 80px 10px 10px 200px;
+}
+
+#tiddlerList {
+	overflow: auto;
+	width: 185px;
+	padding: 2px;
+	position: absolute;
+	top: 80px;
+}
+
+#toolbar ul {
+	list-style-type: none;
+	padding: 0;
+	margin: 0;
+}
+
+.toolbarButton {
+	padding: 10px;
+	margin: 1px 1px 2px 1px;
+	width: 66px;
+	display: inline-block;
+}
+
+#tabList {
+	height: 40px;
+}
+
+.typeHeader {
+	display: block;
+	padding: 10px;
+	text-decoration: none;
+}
+
+.tiddlerList {
+	list-style-type: none;
+	padding: 0;
+	margin: 0;
+}
+
+.tiddlerList li {
+	padding: 5px 5px 5px 10px;
+	font-weight: normal;
+	margin: 1px;
+	word-wrap: break-word;
+}
+
+.tiddlerList li a {
+	text-decoration: none;
+}
+
+#tabList li .ui-icon-close {
+	float: left;
+	margin: 0.4em 0.2em 0 0;
+	cursor: pointer;
+}
+
+#NewTiddlerDialog fieldset {
+	border: 1px solid #666;
+}
+
+#NewTiddlerDialog select {
+	display: block;
+	width: 89%;
+	-webkit-appearance: textfield;
+	-moz-appearance: textfield;
+	padding: 1px 1px 1px 2px;
+	margin-left: 2px;
+}
+
+.ace_editor {
+	top: 48px;
+	left: 7px;
+	bottom: 7px;
+	right: 7px;
+}

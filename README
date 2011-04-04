@@ -1,0 +1,18 @@
+TiddlyACE integrates TiddlySpace with the Ace IDE (https://github.com/ajaxorg/ace)
+
+The intention is that this will aid development of SPAs within TiddlySpace and
+encourage development directly within TiddlySpace itself, cutting out the
+deployment step.
+
+The work pattern then becomes:
+
+	1) code
+	2) refresh browser (test)
+	3) that's it. It's live already.
+
+Please feel free to fork and send in pull requests, as there's still quite a
+lot to do.
+
+TiddlyACE itself written by Ben Gillies
+
+Dependencies: jQuery, Ace, chrjs, jQueryUI, chrjs.store, TiddlySpace
