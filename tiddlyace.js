@@ -109,7 +109,7 @@ var TiddlyWikiMode = false,
 		// store the modified tiddler in pending
 		session.on('change', function(e) {
 			var newText = session.getValue(),
-				tiddler = store.pending[name],
+				tiddler = store.pending[name];
 			if (!tiddler) {
 				tiddler = $.extend(true, {}, store.tiddlers[name]) ||
 					new tiddlyweb.Tiddler(name, store.recipe);
