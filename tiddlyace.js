@@ -165,7 +165,10 @@ $(function() {
 			var $this = $(this),
 				name = $this.find('[name=tiddlerName]input').val(),
 				type = $this.find('[name=tiddlerType]select').val();
-			openTiddler(type, name, 'public');
+			store.getSpace(function(space) {
+				var bagName = space.name + '_public';
+				openTiddler(type, name, bagName);
+			});
 			$this.dialog('close');
 		},
 		$dialog = $($('#tiddlerDialogTemplate').html()).appendTo(document)
