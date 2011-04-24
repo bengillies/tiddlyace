@@ -38,7 +38,7 @@ var TiddlyWikiMode = false,
 
 	// match the tiddler content type (tiddler.type) up with the appropriate key in languages
 	getTiddlerType = function(tiddler) {
-		var mimeType = (tiddler.type) ? tiddler.type :
+		var mimeType = (tiddler && tiddler.type) ? tiddler.type :
 				'other',
 			result = 'other';
 		$.each(languages, function(type, info) {
@@ -78,9 +78,7 @@ var TiddlyWikiMode = false,
 					} else {
 						$.extend(tiddler.tags, languages[type].tags);
 					}
-					// TODO: replace this with an addTiddler method in the chrjs store
-					store.tiddlers[name] = tiddler;
-					store.pending[name] = tiddler;
+					store.addTiddler(tiddler, true);
 				}
 				// spawn a new tab and ace ide
 				newWindow(type, name);
@@ -95,8 +93,7 @@ var TiddlyWikiMode = false,
 	newACE = function(el, type, name) {
 		var editor = ace.edit(el),
 			session = editor.getSession(),
-			tiddlerText = (store.tiddlers[name] && store.tiddlers[name].text) ?
-				store.tiddlers[name].text : '',
+			tiddlerText = store.getTiddler(name, null, true).text,
 			mode;
 		editor.setTheme('ace/theme/twilight');
 		try {
@@ -109,13 +106,11 @@ var TiddlyWikiMode = false,
 		// store the modified tiddler in pending
 		session.on('change', function(e) {
 			var newText = session.getValue(),
-				tiddler = store.pending[name];
-			if (!tiddler) {
-				tiddler = $.extend(true, {}, store.tiddlers[name]) ||
+				tiddler = store.getTiddler(name, null, true),
+				newTiddler = $.extend(true, {}, tiddler) ||
 					new tiddlyweb.Tiddler(name, store.recipe);
-				store.pending[name] = tiddler;
-			}
-			tiddler.text = newText;
+			newTiddler.text = newText;
+			store.addTiddler(newTiddler, true);
 		});
 		openTiddlers[name] = editor;
 		editor.gotoLine(0);
@@ -144,7 +139,7 @@ $(function() {
 		add: function(ev, ui) {
 			var $uiTab = $(ui.tab),
 				title = $uiTab.text(),
-				type = getTiddlerType(store.tiddlers[title]);
+				type = getTiddlerType(store.getTiddler(title, null, true));
 			switchToTab(title);
 			$uiTab.data('tiddler', title);
 			newACE(ui.panel, type, title);
@@ -251,6 +246,7 @@ $(function() {
 		getChildren = function() {
 			store.refreshBags();
 			store.refreshTiddlers();
+			store.retrieveCached();
 			store.unbind('recipe', null, getChildren);
 			// start the timer to refresh tiddlers every xxx seconds
 			if (!refreshTimer) {
