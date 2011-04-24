@@ -208,6 +208,7 @@ $(function() {
 
 	// populate the tiddler list
 	var $tiddlers = $('#tiddlers'),
+		$readOnlyTiddlers = $('#readOnlyTiddlers'),
 		tiddlerTypeTemplate = $('#tiddlerTypeTemplate').html(),
 		tiddlerTemplate = $('#tiddlerListTemplate').html(),
 		$types = {};
@@ -219,24 +220,40 @@ $(function() {
 				$this.siblings('ul').slideToggle('fast');
 			}).end().find('ul').hide().end();
 		$types[type] = $tiddlerType;
-		$tiddlers.append($tiddlerType);
+		$('#tiddlers, #readOnlyTiddlers').append($tiddlerType);
 	});
+	$('#readOnly').find('a:first').click(function() {
+		$('#readOnlyTiddlers').slideToggle('fast');
+	}).end().find('#readOnlyTiddlers').hide().end();
 	// a tiddler has loaded into the store. Check we don't have it already, and add it to the correct section if necessary
 	// TODO: add tiddlers in alphabetical order
 	store.bind('tiddler', null, function(tiddler) {
 		// check we haven't already added this tiddler
-		var $tiddler = $tiddlers.find('li').map(function(i, item) {
-			return ($(item).attr('tiddler') === tiddler.title) ?
-				item : null;
-		});
-		if ($tiddler.length === 0) {
+		var $tiddler = $('#tiddlers, #readOnlyTiddlers').find('li')
+				.map(function(i, item) {
+					return ($(item).attr('tiddler') === tiddler.title) ?
+						item : null;
+				});
+		var addTiddler = function($tidList) {
 			var tiddlerType = getTiddlerType(tiddler);
 			$tiddler = $(tiddlerTemplate.replace(/#\{title\}/g,
 				tiddler.title)).click(function() {
 					openTiddler(tiddlerType, tiddler.title, tiddler.bag.name);
 					return false;
 				});
-			$tiddlers.find('.tiddlers' + tiddlerType + ' ul').append($tiddler);
+			$tidList.find('.tiddlers' + tiddlerType + ' ul').append($tiddler);
+		};
+		if ($tiddler.length === 0) {
+			// if the tiddler comes from this space it is writable, if not, it is read only
+			store.getSpace(function(space) {
+				var splitType = /_(private|public|archive)$/,
+					bagSpace = tiddler.bag.name.split(splitType)[0],
+					$tidList = (space.name === bagSpace) ? $tiddlers
+						: $readOnlyTiddlers;
+				addTiddler($tidList);
+			}, function() {
+				addTiddler($tiddlers);
+			});
 		}
 	});
 
