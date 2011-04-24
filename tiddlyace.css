@@ -19,6 +19,18 @@ header h1 {
 	margin: 0;
 }
 
+#messageArea {
+	position: absolute;
+	top: 30px;
+	right: 20px;
+	width: 200px;
+	height: 40px;
+	z-index: 1;
+	color: white;
+	font-family: helvetica arial sans-serif;
+	font-size: 1.3em;
+}
+
 #workingArea {
 	position: fixed;
 	top: 0;

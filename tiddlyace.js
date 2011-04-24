@@ -130,6 +130,20 @@ var TiddlyWikiMode = false,
 			store.refreshTiddlers();
 		},
 		frequency: 30000
+	},
+	
+	displayMessage = function(message) {
+		var timer,
+			createTimer = function() {
+				timer = setTimeout(function() {
+					$('#messageArea').text('');
+				}, 5000);
+			};
+		$('#messageArea').text(message);
+		if (timer) {
+			clearTimeout(timer);
+		}
+		createTimer(timer);
 	};
 
 $(function() {
@@ -201,7 +215,9 @@ $(function() {
 			return false;
 		}
 		$this.toggleClass('saving');
+		displayMessage('Saving Tiddlers');
 		store.savePending(function(){
+			displayMessage('Saved all Tiddlers');
 			$this.toggleClass('saving');
 		});
 	});
