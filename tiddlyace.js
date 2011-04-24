@@ -93,7 +93,7 @@ var TiddlyWikiMode = false,
 	newACE = function(el, type, name) {
 		var editor = ace.edit(el),
 			session = editor.getSession(),
-			tiddlerText = store.getTiddler(name, null, true).text,
+			tiddlerText = store.getTiddler(name).text,
 			mode;
 		editor.setTheme('ace/theme/twilight');
 		try {
@@ -106,7 +106,7 @@ var TiddlyWikiMode = false,
 		// store the modified tiddler in pending
 		session.on('change', function(e) {
 			var newText = session.getValue(),
-				tiddler = store.getTiddler(name, null, true),
+				tiddler = store.getTiddler(name),
 				newTiddler = $.extend(true, {}, tiddler) ||
 					new tiddlyweb.Tiddler(name, store.recipe);
 			newTiddler.text = newText;
@@ -139,7 +139,7 @@ $(function() {
 		add: function(ev, ui) {
 			var $uiTab = $(ui.tab),
 				title = $uiTab.text(),
-				type = getTiddlerType(store.getTiddler(title, null, true));
+				type = getTiddlerType(store.getTiddler(title));
 			switchToTab(title);
 			$uiTab.data('tiddler', title);
 			newACE(ui.panel, type, title);
