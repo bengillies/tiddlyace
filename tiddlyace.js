@@ -93,7 +93,7 @@ var TiddlyWikiMode = false,
 	newACE = function(el, type, name) {
 		var editor = ace.edit(el),
 			session = editor.getSession(),
-			tiddlerText = store.getTiddler(name).text,
+			tiddlerText = store.getTiddler(name).text || '',
 			mode;
 		editor.setTheme('ace/theme/twilight');
 		try {
