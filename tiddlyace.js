@@ -103,6 +103,7 @@ var TiddlyWikiMode = false,
 			// just don't set a mode if we can't find one
 		}
 		session.setValue(tiddlerText);
+		session.setUseSoftTabs(false);
 		// store the modified tiddler in pending
 		session.on('change', function(e) {
 			var newText = session.getValue(),
@@ -131,7 +132,7 @@ var TiddlyWikiMode = false,
 		},
 		frequency: 30000
 	},
-	
+
 	displayMessage = function(message) {
 		var timer,
 			createTimer = function() {
