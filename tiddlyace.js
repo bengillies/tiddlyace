@@ -1,4 +1,5 @@
 /*
+ *
  * main entry point for TiddlyACE
  *
  * TiddlyACE integrates TiddlySpace with the Ace IDE (https://github.com/ajaxorg/ace)
@@ -180,8 +181,10 @@ $(function() {
 				name = $this.find('[name=tiddlerName]input').val(),
 				type = $this.find('[name=tiddlerType]select').val();
 			store.getSpace(function(space) {
-				var bagName = space.name + '_public';
-				openTiddler(type, name, bagName);
+				if (space) {
+					var bagName = space.name + '_public';
+					openTiddler(type, name, bagName);
+				}
 			});
 			$this.dialog('close');
 		},
@@ -273,13 +276,15 @@ $(function() {
 		if ($tiddler.length === 0) {
 			// if the tiddler comes from this space it is writable, if not, it is read only
 			store.getSpace(function(space) {
-				var splitType = /_(private|public|archive)$/,
-					bagSpace = tiddler.bag.name.split(splitType)[0],
-					$tidList = (space.name === bagSpace) ? $tiddlers
-						: $readOnlyTiddlers;
-				addTiddler($tidList);
-			}, function() {
-				addTiddler($tiddlers);
+				if (space) {
+					var splitType = /_(private|public|archive)$/,
+						bagSpace = tiddler.bag.name.split(splitType)[0],
+						$tidList = (space.name === bagSpace) ? $tiddlers
+							: $readOnlyTiddlers;
+					addTiddler($tidList);
+				} else {
+					addTiddler($tiddlers);
+				}
 			});
 		}
 	});
