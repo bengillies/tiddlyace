@@ -10,6 +10,10 @@
 
 window.tiddlyace = (function($) {
 
+if (window.Worker) {
+	window.Worker = undefined; // TODO: Hacky. Remove this when https://github.com/ajaxorg/ace/issues/245 is fixed
+}
+
 var TiddlyWikiMode = false,
 	// mappings for dealing with different types of tiddlers
 	languages = {
