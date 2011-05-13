@@ -217,8 +217,14 @@ $(function() {
 		}
 		$this.addClass('saving');
 		displayMessage('Saving Tiddlers');
-		store.savePending(function(){
-			displayMessage('Saved all Tiddlers');
+		store.savePending(function(response, error){
+			if (response) {
+				displayMessage('Saved all Tiddlers');
+			} else if (error.name === 'SaveError') {
+				displayMessage('There was a problem saving. Please try again');
+			} else if (error.name === 'EmptyError') {
+				displayMessage('There is nothing to save');
+			}
 			$this.removeClass('saving');
 		});
 	});
