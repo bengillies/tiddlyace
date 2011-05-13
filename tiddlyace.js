@@ -215,11 +215,11 @@ $(function() {
 		if ($this.hasClass('saving')) {
 			return false;
 		}
-		$this.toggleClass('saving');
+		$this.addClass('saving');
 		displayMessage('Saving Tiddlers');
 		store.savePending(function(){
 			displayMessage('Saved all Tiddlers');
-			$this.toggleClass('saving');
+			$this.removeClass('saving');
 		});
 	});
 
