@@ -77,7 +77,7 @@ var TiddlyWikiMode = false,
 			store.getTiddler(name, function(tiddler) {
 				if (!tiddler) {
 					tiddler = new tiddlyweb.Tiddler(name);
-					tiddler.bag = store.bags[bag];
+					tiddler.bag = store.getBag(bag);
 					if ((languages.hasOwnProperty(type)) && (!TiddlyWikiMode)) {
 						tiddler.type = languages[type].type;
 					} else {
