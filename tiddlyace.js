@@ -224,7 +224,7 @@ $(function() {
 		}
 		$this.addClass('saving');
 		displayMessage('Saving Tiddlers');
-		store.savePending(function(response, error){
+		store.save(function(response, error){
 			if (response) {
 				displayMessage('Saved all Tiddlers');
 			} else if (error.name === 'SaveError') {
