@@ -98,7 +98,10 @@ var TiddlyWikiMode = false,
 	newACE = function(el, type, name) {
 		var editor = ace.edit(el),
 			session = editor.getSession(),
-			tiddlerText = store.getTiddler(name).text || '',
+			tiddler = store.getTiddler(name),
+			tiddlerText = tiddler.text || '',
+			readOnly = (tiddler && tiddler.permissions &&
+				tiddler.permissions.indexOf('write') === -1) ? true : false,
 			mode;
 		editor.setTheme('ace/theme/twilight');
 		try {
@@ -109,6 +112,7 @@ var TiddlyWikiMode = false,
 		}
 		session.setValue(tiddlerText);
 		session.setUseSoftTabs(false);
+		editor.setReadOnly(readOnly);
 		// store the modified tiddler in pending
 		session.on('change', function(e) {
 			var newText = session.getValue(),
