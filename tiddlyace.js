@@ -127,10 +127,12 @@ var TiddlyWikiMode = false,
 		// refresh the tab if the tiddler changes on the server
 		// XXX: this will discard changes that have not been saved. It should probably be more intelligent
 		store.bind('tiddler', name, function(newTiddler) {
-			store.getTiddler(newTiddler.title, function(textTiddler) {
-				session.setValue(textTiddler.text);
-				delete store.pending[textTiddler.title];
-			});
+			if (newTiddler.lastSync) { // it's not just a local tiddler
+				store.getTiddler(newTiddler.title, function(textTiddler) {
+					session.setValue(textTiddler.text);
+					delete store.pending[textTiddler.title];
+				});
+			}
 		});
 	},
 
