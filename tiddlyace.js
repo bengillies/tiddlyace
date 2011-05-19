@@ -130,7 +130,8 @@ var TiddlyWikiMode = false,
 			if (newTiddler.lastSync) { // it's not just a local tiddler
 				store.getTiddler(newTiddler.title, function(textTiddler) {
 					session.setValue(textTiddler.text);
-					delete store.pending[textTiddler.title];
+					displayMessage(newTiddler.title + ' updated from server.');
+					store.remove(textTiddler); // remove local changed version
 				});
 			}
 		});
