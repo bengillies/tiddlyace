@@ -9,6 +9,8 @@
  * Dependencies: jQuery, Ace, chrjs, jQueryUI, chrjs.store
  */
 
+/*global tiddlyweb jQuery window document ace require*/
+
 window.tiddlyace = (function($) {
 
 if (window.Worker) {
@@ -56,8 +58,7 @@ var TiddlyWikiMode = false,
 
 	// new tab window
 	newWindow = function(type, name) {
-		var id = type + '_' + String(Math.random()).slice(2),
-			newType = (languages.hasOwnProperty(type)) ? type : 'javascript';
+		var id = type + '_' + String(Math.random()).slice(2);
 		$('#workingArea').tabs('add', '#' + id, name);
 	},
 
@@ -67,6 +68,9 @@ var TiddlyWikiMode = false,
 		}).attr('href');
 		$('#workingArea').tabs('select', hashID);
 	},
+
+	// all tiddlers currently open in a tab
+	openTiddlers = {},
 
 	// open a tiddler in a new tab with its own ace editor, creating it first if necessary
 	openTiddler = function(type, name, bag) {
@@ -91,8 +95,19 @@ var TiddlyWikiMode = false,
 		}
 	},
 
-	// all tiddlers currently open in a tab
-	openTiddlers = {},
+	displayMessage = function(message) {
+		var timer,
+			createTimer = function() {
+				timer = window.setTimeout(function() {
+					$('#messageArea').text('');
+				}, 5000);
+			};
+		$('#messageArea').text(message);
+		if (timer) {
+			window.clearTimeout(timer);
+		}
+		createTimer(timer);
+	},
 
 	// set up a new ace ide inside the given tab
 	newACE = function(el, type, name) {
@@ -135,29 +150,16 @@ var TiddlyWikiMode = false,
 				});
 			}
 		});
-	},
+	}, refresh;
 
-	refresh = {
-		handler: function() {
-			setTimeout(refresh.handler, refresh.frequency);
-			store.refreshTiddlers();
-		},
-		frequency: 30000
+refresh = {
+	handler: function() {
+		window.setTimeout(refresh.handler, refresh.frequency);
+		store.refreshTiddlers();
 	},
+	frequency: 30000
+};
 
-	displayMessage = function(message) {
-		var timer,
-			createTimer = function() {
-				timer = setTimeout(function() {
-					$('#messageArea').text('');
-				}, 5000);
-			};
-		$('#messageArea').text(message);
-		if (timer) {
-			clearTimeout(timer);
-		}
-		createTimer(timer);
-	};
 
 $(function() {
 	// set up the tabbed interface
@@ -195,27 +197,27 @@ $(function() {
 			});
 			$this.dialog('close');
 		},
-		$dialog = $($('#tiddlerDialogTemplate').html()).appendTo(document)
-			.dialog({
-				autoOpen: false,
-				modal: true,
-				buttons: {
-					'OK': okDialogBtn,
-					'Cancel': function() {
-						$(this).dialog('close');
-					}
-				},
-				open: function() {
-					$(this).find('[name=tiddlerType]select').val('other');
-				},
-				close: function() {
-					$(this).find('input, select').val('');
+		$dialog = $($('#tiddlerDialogTemplate').html()).appendTo(document),
+		typeOptions = $('#tiddlerTypeOptions').html(), $selectDialog;
+		$dialog.dialog({
+			autoOpen: false,
+			modal: true,
+			buttons: {
+				'OK': okDialogBtn,
+				'Cancel': function() {
+					$(this).dialog('close');
 				}
-			}).find('form').submit(function() {
-				okDialogBtn.apply($dialog[0], []);
-				return false;
-			}).end(),
-		typeOptions = $('#tiddlerTypeOptions').html(),
+			},
+			open: function() {
+				$(this).find('[name=tiddlerType]select').val('other');
+			},
+			close: function() {
+				$(this).find('input, select').val('');
+			}
+		}).find('form').submit(function() {
+			okDialogBtn.apply($dialog[0], []);
+			return false;
+		}).end();
 		$selectDialog = $dialog.find('[name=tiddlerType]select');
 	$.each(languages, function(type) {
 		$selectDialog.append(typeOptions.replace(/#\{type\}/g, type));
@@ -297,18 +299,19 @@ $(function() {
 	});
 
 	// populate the store and set the timer up
-	var refreshTimer = null,
-		// get bags and tiddlers once we have a recipe to get them from
-		getChildren = function() {
-			store.refreshBags();
-			store.refreshTiddlers();
-			store.retrieveCached();
-			store.unbind('recipe', null, getChildren);
-			// start the timer to refresh tiddlers every xxx seconds
-			if (!refreshTimer) {
-				refreshTimer = setTimeout(refresh.handler, refresh.frequency);
-			}
-		};
+	var refreshTimer = null, getChildren;
+	// get bags and tiddlers once we have a recipe to get them from
+	getChildren = function() {
+		store.refreshBags();
+		store.refreshTiddlers();
+		store.retrieveCached();
+		store.unbind('recipe', null, getChildren);
+		// start the timer to refresh tiddlers every xxx seconds
+		if (!refreshTimer) {
+			refreshTimer = window.setTimeout(refresh.handler,
+				refresh.frequency);
+		}
+	};
 	store.bind('recipe', null, getChildren);
 	store.refreshRecipe();
 });
@@ -320,4 +323,4 @@ return {
 	refresh: refresh
 };
 
-})(jQuery);
+}(jQuery));
