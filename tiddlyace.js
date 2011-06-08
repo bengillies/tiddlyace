@@ -265,37 +265,52 @@ $(function() {
 		$('#readOnlyTiddlers').slideToggle('fast');
 	}).end().find('#readOnlyTiddlers').hide().end();
 	// a tiddler has loaded into the store. Check we don't have it already, and add it to the correct section if necessary
-	// TODO: add tiddlers in alphabetical order
 	store.bind('tiddler', null, function(tiddler) {
-		// check we haven't already added this tiddler
-		var $tiddler = $('#tiddlers, #readOnlyTiddlers').find('li')
-				.map(function(i, item) {
-					return ($(item).attr('tiddler') === tiddler.title) ?
-						item : null;
+		store.getSpace(function(space) {
+			var bagSpace = tiddler.bag.name.replace(/_[^_]*$/, ''),
+				$tidList, readOnly, type = getTiddlerType(tiddler),
+				selector = '.tiddlers' + type + ' ul',
+				tiddlers = store().map(function(tid) {
+					var matched = false;
+					if (languages[type].type !== '') {
+						return (tiddler.type === tid.type) ? tid : undefined;
+					} else {
+						$.each(languages, function(name, obj) {
+							if (obj.type === tid.type) {
+								matched = true;
+								return false;
+							}
+						});
+						return (matched) ? undefined : tid;
+					}
 				});
-		var addTiddler = function($tidList) {
-			var tiddlerType = getTiddlerType(tiddler);
-			$tiddler = $(tiddlerTemplate.replace(/#\{title\}/g,
-				tiddler.title)).click(function() {
-					openTiddler(tiddlerType, tiddler.title, tiddler.bag.name);
-					return false;
+			if (space.name === bagSpace) {
+				readOnly = false;
+			} else {
+				readOnly = true;
+			}
+
+			$tidList = (readOnly) ? $readOnlyTiddlers : $tiddlers;
+			$tidList = $tidList.find(selector).html('');
+			if (!readOnly) {
+				tiddlers = tiddlers.space(space.name);
+			} else {
+				tiddlers = tiddlers.map(function(tid) {
+					return (space.name !== tid.bag.name.replace(/_[^_]*$/, '')
+						) ? tid : undefined;
 				});
-			$tidList.find('.tiddlers' + tiddlerType + ' ul').append($tiddler);
-		};
-		if ($tiddler.length === 0) {
-			// if the tiddler comes from this space it is writable, if not, it is read only
-			store.getSpace(function(space) {
-				if (space) {
-					var splitType = /_(private|public|archive)$/,
-						bagSpace = tiddler.bag.name.split(splitType)[0],
-						$tidList = (space.name === bagSpace) ? $tiddlers
-							: $readOnlyTiddlers;
-					addTiddler($tidList);
-				} else {
-					addTiddler($tiddlers);
-				}
+			}
+			tiddlers.sort(function(a, b) {
+				return (a.title.toLowerCase() < b.title.toLowerCase()) ? -1 : 1;
+			}).reduce($tidList, function(tid, $list) {
+				$list.append($(tiddlerTemplate.replace(/#\{title\}/g,
+					tid.title)).click(function() {
+						openTiddler(type, tid.title, tid.bag.name);
+						return false;
+					}));
+				return $list;
 			});
-		}
+		});
 	});
 
 	// populate the store and set the timer up
