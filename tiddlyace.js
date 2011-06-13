@@ -315,20 +315,14 @@ $(function() {
 
 	// populate the store and set the timer up
 	var refreshTimer = null, getChildren;
-	// get bags and tiddlers once we have a recipe to get them from
-	getChildren = function() {
-		store.refreshBags();
-		store.refreshTiddlers();
+	store.refreshTiddlers(null, function(tiddlers) {
 		store.retrieveCached();
-		store.unbind('recipe', null, getChildren);
 		// start the timer to refresh tiddlers every xxx seconds
 		if (!refreshTimer) {
 			refreshTimer = window.setTimeout(refresh.handler,
 				refresh.frequency);
 		}
-	};
-	store.bind('recipe', null, getChildren);
-	store.refreshRecipe();
+	});
 });
 
 return {
