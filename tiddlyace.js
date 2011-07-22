@@ -41,7 +41,7 @@ var TiddlyWikiMode = false,
 			tags: []
 		}
 	},
-	store = tiddlyweb.Store(),
+	store = tiddlyweb.Store(null, false),
 
 	// match the tiddler content type (tiddler.type) up with the appropriate key in languages
 	getTiddlerType = function(tiddler) {
@@ -73,21 +73,20 @@ var TiddlyWikiMode = false,
 	openTiddlers = {},
 
 	// open a tiddler in a new tab with its own ace editor, creating it first if necessary
-	openTiddler = function(type, name, bag) {
+	openTiddler = function(type, name) {
 		if (openTiddlers[name]) {
 			switchToTab(name);
 		} else {
 			// tiddlers are skinny by default, so get the fat version
-			store.getTiddler(name, function(tiddler) {
+			store.get(name, function(tiddler) {
 				if (!tiddler) {
 					tiddler = new tiddlyweb.Tiddler(name);
-					tiddler.bag = store.getBag(bag);
 					if ((languages.hasOwnProperty(type)) && (!TiddlyWikiMode)) {
 						tiddler.type = languages[type].type;
 					} else {
 						$.extend(tiddler.tags, languages[type].tags);
 					}
-					store.addTiddler(tiddler, true);
+					store.add(tiddler, true);
 				}
 				// spawn a new tab and ace ide
 				newWindow(type, name);
@@ -113,7 +112,7 @@ var TiddlyWikiMode = false,
 	newACE = function(el, type, name) {
 		var editor = ace.edit(el),
 			session = editor.getSession(),
-			tiddler = store.getTiddler(name),
+			tiddler = store.get(name),
 			tiddlerText = tiddler.text || '',
 			readOnly = (tiddler && tiddler.permissions &&
 				tiddler.permissions.indexOf('write') === -1) ? true : false,
@@ -131,11 +130,9 @@ var TiddlyWikiMode = false,
 		// store the modified tiddler in pending
 		session.on('change', function(e) {
 			var newText = session.getValue(),
-				tiddler = store.getTiddler(name),
-				newTiddler = $.extend(true, {}, tiddler) ||
-					new tiddlyweb.Tiddler(name, store.recipe);
-			newTiddler.text = newText;
-			store.addTiddler(newTiddler, true);
+				tiddler = store.get(name) || new tiddlyweb.Tiddler(name);
+			tiddler.text = newText;
+			store.add(newTiddler, true);
 		});
 		openTiddlers[name] = editor;
 		editor.gotoLine(0);
@@ -143,7 +140,7 @@ var TiddlyWikiMode = false,
 		// XXX: this will discard changes that have not been saved. It should probably be more intelligent
 		store.bind('tiddler', name, function(newTiddler) {
 			if (newTiddler.lastSync) { // it's not just a local tiddler
-				store.getTiddler(newTiddler.title, function(textTiddler) {
+				store.get(newTiddler.title, function(textTiddler) {
 					session.setValue(textTiddler.text);
 					displayMessage(newTiddler.title + ' updated from server.');
 					store.remove(textTiddler); // remove local changed version
@@ -155,7 +152,7 @@ var TiddlyWikiMode = false,
 refresh = {
 	handler: function() {
 		window.setTimeout(refresh.handler, refresh.frequency);
-		store.refreshTiddlers();
+		store.refresh();
 	},
 	frequency: 30000
 };
@@ -168,7 +165,7 @@ $(function() {
 		add: function(ev, ui) {
 			var $uiTab = $(ui.tab),
 				title = $uiTab.text(),
-				type = getTiddlerType(store.getTiddler(title));
+				type = getTiddlerType(store.get(title));
 			switchToTab(title);
 			$uiTab.data('tiddler', title);
 			newACE(ui.panel, type, title);
@@ -189,12 +186,7 @@ $(function() {
 			var $this = $(this),
 				name = $this.find('[name=tiddlerName]input').val(),
 				type = $this.find('[name=tiddlerType]select').val();
-			store.getSpace(function(space) {
-				if (space) {
-					var bagName = space.name + '_public';
-					openTiddler(type, name, bagName);
-				}
-			});
+			openTiddler(type, name);
 			$this.dialog('close');
 		},
 		$dialog = $($('#tiddlerDialogTemplate').html()).appendTo(document),
@@ -246,76 +238,56 @@ $(function() {
 	});
 
 	// populate the tiddler list
-	var $tiddlers = $('#tiddlers'),
-		$readOnlyTiddlers = $('#readOnlyTiddlers'),
-		tiddlerTypeTemplate = $('#tiddlerTypeTemplate').html(),
+	var tiddlerTypeTemplate = $('#tiddlerTypeTemplate').html(),
 		tiddlerTemplate = $('#tiddlerListTemplate').html(),
 		$types = {};
-	// set up sections for each type of tiddler
-	$.each(languages, function(type) {
-		var $tiddlerType = $(tiddlerTypeTemplate.replace(/#\{type\}/g,
-			type)).find('a').click(function() {
-				var $this = $(this);
-				$this.siblings('ul').slideToggle('fast');
-			}).end().find('ul').hide().end();
-		$types[type] = $tiddlerType;
-		$('#tiddlers, #readOnlyTiddlers').append($tiddlerType);
-	});
+
+	// hide read only sections by default
 	$('#readOnly').find('a:first').click(function() {
 		$('#readOnlyTiddlers').slideToggle('fast');
 	}).end().find('#readOnlyTiddlers').hide().end();
-	// a tiddler has loaded into the store. Check we don't have it already, and add it to the correct section if necessary
-	store.bind('tiddler', null, function(tiddler) {
-		store.getSpace(function(space) {
-			var bagSpace = tiddler.bag.name.replace(/_[^_]*$/, ''),
-				$tidList, readOnly, type = getTiddlerType(tiddler),
-				selector = '.tiddlers' + type + ' ul',
-				tiddlers = store().map(function(tid) {
-					var matched = false;
-					if (languages[type].type !== '') {
-						return (tiddler.type === tid.type) ? tid : undefined;
-					} else {
-						$.each(languages, function(name, obj) {
-							if (obj.type === tid.type) {
-								matched = true;
-								return false;
-							}
-						});
-						return (matched) ? undefined : tid;
-					}
-				});
-			if (space.name === bagSpace) {
-				readOnly = false;
-			} else {
-				readOnly = true;
-			}
 
-			$tidList = (readOnly) ? $readOnlyTiddlers : $tiddlers;
-			$tidList = $tidList.find(selector).html('');
-			if (!readOnly) {
-				tiddlers = tiddlers.space(space.name);
-			} else {
-				tiddlers = tiddlers.map(function(tid) {
-					return (space.name !== tid.bag.name.replace(/_[^_]*$/, '')
-						) ? tid : undefined;
-				});
-			}
-			tiddlers.sort(function(a, b) {
-				return (a.title.toLowerCase() < b.title.toLowerCase()) ? -1 : 1;
-			}).reduce($tidList, function(tid, $list) {
-				$list.append($(tiddlerTemplate.replace(/#\{title\}/g,
-					tid.title)).click(function() {
-						openTiddler(type, tid.title, tid.bag.name);
+	// add sections and populate with tiddlers
+	$.each(['#tiddlers', '#readOnlyTiddlers'], function(readOnly, selector) {
+		var $tiddlers = $(selector);
+
+		$.each(languages, function(type, details) {
+			// construct each section
+			var $tiddlerType = $(tiddlerTypeTemplate.replace(/#\{type\}/g,
+					type)).find('a').click(function() {
+						var $this = $(this);
+						$this.siblings('ul').slideToggle('fast');
+					}).end().find('ul').hide().end().appendTo($tiddlers),
+				mime = details.type, ts;
+
+			// fill it with tiddlers
+			ts = (mime) ? store('type', mime) : store().not('type');
+			ts.space(!readOnly).bind(function(tiddler) {
+				var $sorted, title = tiddler.title;
+				$(tiddlerTemplate.replace(/#\{title\}/g, title))
+					.click(function() {
+						openTiddler(type, title);
 						return false;
-					}));
-				return $list;
+					}).appendTo($('ul', $tiddlerType));
+
+				// sort the list
+				$sorted = $('li', $tiddlerType);
+				$.unique($sorted);
+				$sorted.sort(function(a, b) {
+					return ($(a).attr('tiddler').toLowerCase() >
+							$(b).attr('tiddler').toLowerCase()) ?
+						1 : -1;
+				});
+
+				// replace the un-sorted version
+				$('ul', $tiddlerType).html('').append($sorted);
 			});
 		});
 	});
 
 	// populate the store and set the timer up
 	var refreshTimer = null, getChildren;
-	store.refreshTiddlers(null, function(tiddlers) {
+	store.refresh(null, function(tiddlers) {
 		store.retrieveCached();
 		// start the timer to refresh tiddlers every xxx seconds
 		if (!refreshTimer) {
