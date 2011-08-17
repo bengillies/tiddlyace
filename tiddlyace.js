@@ -136,17 +136,6 @@ var TiddlyWikiMode = false,
 		});
 		openTiddlers[name] = editor;
 		editor.gotoLine(0);
-		// refresh the tab if the tiddler changes on the server
-		// XXX: this will discard changes that have not been saved. It should probably be more intelligent
-		store.bind('tiddler', name, function(newTiddler) {
-			if (newTiddler.lastSync) { // it's not just a local tiddler
-				store.get(newTiddler.title, function(textTiddler) {
-					session.setValue(textTiddler.text);
-					displayMessage(newTiddler.title + ' updated from server.');
-					store.remove(textTiddler); // remove local changed version
-				});
-			}
-		});
 	}, refresh;
 
 refresh = {
