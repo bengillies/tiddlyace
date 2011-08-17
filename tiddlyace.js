@@ -110,12 +110,12 @@ var TiddlyWikiMode = false,
 
 	// set up a new ace ide inside the given tab
 	newACE = function(el, type, name) {
-		var editor = ace.edit(el),
-			session = editor.getSession(),
-			tiddler = store.get(name),
-			tiddlerText = tiddler.text || '',
+		var editor = ace.edit(el), session, tiddler, tiddlerText, readOnly, mode;
+			session = editor.getSession();
+			tiddler = store.get(name);
+			tiddlerText = tiddler.text || '';
 			readOnly = (tiddler && tiddler.permissions &&
-				tiddler.permissions.indexOf('write') === -1) ? true : false,
+				tiddler.permissions.indexOf('write') === -1) ? true : false;
 			mode;
 		editor.setTheme('ace/theme/twilight');
 		try {
@@ -132,7 +132,7 @@ var TiddlyWikiMode = false,
 			var newText = session.getValue(),
 				tiddler = store.get(name) || new tiddlyweb.Tiddler(name);
 			tiddler.text = newText;
-			store.add(newTiddler, true);
+			store.add(tiddler, true);
 		});
 		openTiddlers[name] = editor;
 		editor.gotoLine(0);
@@ -263,31 +263,44 @@ $(function() {
 			// fill it with tiddlers
 			ts = (mime) ? store('type', mime) : store().not('type');
 			ts.space(!readOnly).bind(function(tiddler) {
-				var $sorted, title = tiddler.title;
+				var $sorted, title = tiddler.title, prevTiddler, results = [];
 				$(tiddlerTemplate.replace(/#\{title\}/g, title))
-					.click(function() {
-						openTiddler(type, title);
-						return false;
-					}).appendTo($('ul', $tiddlerType));
+					.appendTo($('ul', $tiddlerType));
 
 				// sort the list
 				$sorted = $('li', $tiddlerType);
-				$.unique($sorted);
 				$sorted.sort(function(a, b) {
 					return ($(a).attr('tiddler').toLowerCase() >
 							$(b).attr('tiddler').toLowerCase()) ?
 						1 : -1;
 				});
+				// make unique
+				$sorted.each(function(i, el) {
+					var tid = $(el).attr('tiddler');
+					if (!prevTiddler || prevTiddler !== tid) {
+						results.push(el);
+					}
+					prevTiddler = tid;
+				});
 
 				// replace the un-sorted version
-				$('ul', $tiddlerType).html('').append($sorted);
+				$('ul', $tiddlerType).html('').append(results);
+
+				// set up on click events (we need to do this here as sorting destroys them all
+				$.each(results, function(i, el) {
+					var $el = $(el), title = $el.attr('tiddler');
+					$el.click(function() {
+						openTiddler(type, title);
+						return false;
+					});
+				});
 			});
 		});
 	});
 
 	// populate the store and set the timer up
 	var refreshTimer = null, getChildren;
-	store.refresh(null, function(tiddlers) {
+	store.refresh(function(tiddlers) {
 		store.retrieveCached();
 		// start the timer to refresh tiddlers every xxx seconds
 		if (!refreshTimer) {
